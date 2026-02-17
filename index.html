@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>QR Сканер</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0f17;
+      --surface: #171726;
+      --text: #e0e0ff;
+      --accent: #7c3aed;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      text-align: center;
+      margin: 20px 0 28px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a78bfa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #a0a0cc;
+      font-size: 1.05rem;
+    }
+
+    #reader-container {
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto 24px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.65);
+      border: 2px solid var(--accent);
+      background: var(--surface);
+      position: relative;
+    }
+
+    #reader {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+
+    .status-box {
+      width: 100%;
+      max-width: 460px;
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      border: 1px solid #2d2d4a;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .status-box h3 {
+      color: var(--accent);
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    #status {
+      font-weight: 500;
+      min-height: 1.4em;
+    }
+
+    #result {
+      background: #0a0a1f;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 8px;
+      font-family: monospace;
+      word-break: break-all;
+      font-size: 0.95rem;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 12px 8px 0;
+      transition: all 0.2s;
+    }
+
+    .btn:hover { background: #5b21b6; transform: translateY(-1px); }
+    .btn:active  { transform: translateY(0); }
+
+    .file-btn {
+      background: #4b5563;
+      margin-top: 16px;
+    }
+
+    .file-btn:hover { background: #374151; }
+
+    #fileInput {
+      display: none;
+    }
+
+    .tips {
+      color: var(--warning);
+      font-size: 0.92rem;
+      margin-top: 12px;
+      line-height: 1.45;
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 32px 0 16px;
+      color: #6b7280;
+      font-size: 0.875rem;
+      text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      h1 { font-size: 1.9rem; }
+      #reader-container { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>QR Сканер</h1>
+    <div class="subtitle">Наведите камеру на код</div>
+  </header>
+
+  <div id="reader-container">
+    <div id="reader"></div>
+  </div>
+
+  <div class="status-box">
+    <h3>Статус</h3>
+    <div id="status">Запускаю камеру...</div>
+    <div id="tips" class="tips"></div>
+  </div>
+
+  <div class="status-box">
+    <h3>Результат</h3>
+    <div id="result">—</div>
+  </div>
+
+  <button class="btn" onclick="location.reload()">Обновить страницу</button>
+
+  <button class="btn file-btn" onclick="document.getElementById('fileInput').click()">
+    Или загрузить фото QR
+  </button>
+
+  <input type="file" id="fileInput" accept="image/*" />
+
+  <footer>html5-qrcode • работает только по HTTPS</footer>
+
+  <script src="https://unpkg.com/html5-qrcode@latest/html5-qrcode.min.js"></script>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+    const tipsEl   = document.getElementById("tips");
+
+    function setStatus(text, className = "") {
+      statusEl.textContent = text;
+      statusEl.className = className;
+    }
+
+    function setResult(text, isSuccess = false) {
+      resultEl.textContent = text || "—";
+      resultEl.style.color = isSuccess ? "var(--success)" : "inherit";
+    }
+
+    function showTip(text) {
+      tipsEl.textContent = text;
+    }
+
+    const qrCode = new Html5Qrcode("reader", { verbose: false });
+
+    // Адаптивный qrbox — 70–80% от видимой области
+    function getQrBox(viewfinderWidth, viewfinderHeight) {
+      const minDimension = Math.min(viewfinderWidth, viewfinderHeight);
+      const size = Math.round(minDimension * 0.78);
+      return { width: size, height: size };
+    }
+
+    setStatus("Запускаю камеру...");
+
+    qrCode.start(
+      { facingMode: "environment" },
+      {
+        fps: 15,
+        qrbox: getQrBox,
+        aspectRatio: 1.0,
+        disableFlip: false,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,  // иногда помогает
+        ],
+        useBarCodeDetectorIfSupported: true
+      },
+      (decodedText) => {
+        setResult(decodedText, true);
+        setStatus("Код успешно прочитан!", "success");
+        showTip("");
+
+        // Здесь можно отправить на webhook
+        console.log("Прочитано:", decodedText);
+
+        // qrCode.stop();   // если нужно сканировать только один раз — раскомментировать
+      },
+      (err) => {
+        // Тихие ошибки сканирования — показываем только если долго нет результата
+        if (typeof err === "string" && err.includes("No MultiFormat Readers were able to detect the code")) {
+          setStatus("Ищу код...");
+          showTip("Наведите камеру ближе / дальше, улучшите освещение, держите код прямо");
+        }
+      }
+    )
+    .then(() => {
+      setStatus("Камера работает");
+      showTip("Наведите QR-код в квадратную рамку");
+    })
+    .catch(err => {
+      console.error("Ошибка запуска:", err);
+      let msg = "Не удалось запустить камеру";
+      let tip = "Проверьте разрешения и откройте страницу по HTTPS";
+
+      if (err.name === "NotAllowedError") {
+        msg = "Доступ к камере запрещён";
+        tip = "Нажмите на замок в адресной строке → разрешите камеру → обновите страницу";
+      } else if (err.name === "NotReadableError") {
+        msg = "Камера занята или недоступна";
+        tip = "Закройте другие приложения/вкладки с камерой";
+      } else if (err.name === "OverconstrainedError") {
+        msg = "Устройство не поддерживает запрошенные параметры";
+        tip = "Попробуйте в другом браузере";
+      }
+
+      setStatus(msg, "error");
+      showTip(tip);
+    });
+
+    // ────────────────────────────────────────────────
+    // Загрузка фото как запасной вариант
+    // ────────────────────────────────────────────────
+
+    document.getElementById("fileInput").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      setStatus("Читаю фото...");
+      setResult("Обработка изображения...");
+
+      try {
+        const result = await qrCode.scanFile(file, true);
+        setResult(result, true);
+        setStatus("Прочитано из фото!", "success");
+        showTip("");
+        console.log("Из фото прочитано:", result);
+      } catch (err) {
+        console.error(err);
+        setStatus("Не удалось прочитать фото", "error");
+        setResult("—");
+        showTip("Попробуйте другое фото. Убедитесь, что QR-код чёткий и полностью виден.");
+      }
+
+      // очищаем input чтобы можно было загрузить то же фото повторно
+      e.target.value = "";
+    });
+  </script>
+</body>
+</html>
