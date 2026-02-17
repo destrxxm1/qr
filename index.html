@@ -4,27 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>QR Сканер</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
   <style>
     :root {
       --bg: #0f0f17;
       --surface: #171726;
+      --surface2: #1e1e38;
       --text: #e0e0ff;
       --text-secondary: #a0a0cc;
       --accent: #7c3aed;
-      --success: #22c55e;
+      --accent-dark: #5b21b6;
+      --success: #10b981;
       --error: #ef4444;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin:0; padding:0; box-sizing:border-box; }
 
     body {
       font-family: 'Inter', system-ui, sans-serif;
@@ -37,190 +33,243 @@
       align-items: center;
     }
 
+    header {
+      text-align: center;
+      margin: 20px 0 32px;
+    }
+
     h1 {
-      font-size: 2.25rem;
+      font-size: 2.1rem;
       font-weight: 700;
       margin-bottom: 8px;
       background: linear-gradient(90deg, #a78bfa, #c084fc);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-align: center;
     }
 
-    .subtitle {
-      color: var(--text-secondary);
-      text-align: center;
-      margin-bottom: 24px;
-      font-size: 1.1rem;
-    }
+    .subtitle { color: var(--text-secondary); font-size: 1.05rem; }
 
     #reader-container {
       width: 100%;
-      max-width: 480px;
+      max-width: 420px;
       margin: 0 auto 24px;
       border-radius: 16px;
       overflow: hidden;
-      border: 3px solid var(--accent);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      border: 2px solid var(--accent);
       background: var(--surface);
+      position: relative;
     }
 
-    #reader {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-    }
+    #reader { width: 100%; aspect-ratio: 1 / 1; }
 
-    .status-box {
+    .info-box {
       width: 100%;
-      max-width: 480px;
+      max-width: 460px;
       background: var(--surface);
       border-radius: 12px;
       padding: 16px 20px;
       margin-bottom: 16px;
       border: 1px solid #2d2d4a;
-      font-size: 1.05rem;
-      line-height: 1.45;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
-    .success { color: var(--success); font-weight: 600; }
-    .error   { color: var(--error); font-weight: 600; }
+    .info-box h3 {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
 
-    .upload-btn {
+    #status { font-weight: 500; }
+
+    #result {
+      word-break: break-all;
+      font-family: monospace;
+      background: #0a0a1f;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    #response {
+      white-space: pre-wrap;
+      font-size: 0.95rem;
+      max-height: 180px;
+      overflow-y: auto;
+      background: #0a0a1f;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    .success { color: var(--success); }
+    .error   { color: var(--error); }
+
+    .btn {
       background: var(--accent);
       color: white;
       border: none;
       padding: 12px 28px;
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 600;
       border-radius: 10px;
       cursor: pointer;
-      margin: 12px 0;
-      transition: 0.2s;
+      transition: all 0.2s;
+      margin: 12px 8px 0;
     }
 
-    .upload-btn:hover {
-      background: #5b21b6;
-    }
-
-    #fileInput {
-      display: none;
-    }
+    .btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
+    .btn:active  { transform: translateY(0); }
 
     footer {
       margin-top: auto;
-      padding: 32px 0 16px;
+      padding: 24px 0 16px;
       color: #6b7280;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
+      text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      h1 { font-size: 1.8rem; }
+      #reader-container { max-width: 100%; }
     }
   </style>
 </head>
 <body>
 
-  <h1>QR Сканер</h1>
-  <div class="subtitle">Наведи камеру или загрузи фото</div>
+  <header>
+    <h1>QR Сканер</h1>
+    <div class="subtitle">Наведи камеру на код — данные улетят на webhook</div>
+  </header>
 
   <div id="reader-container">
     <div id="reader"></div>
   </div>
 
-  <div class="status-box" id="status">Запускаю камеру...</div>
+  <div class="info-box">
+    <h3>Статус</h3>
+    <div id="status">Запускаю камеру...</div>
+  </div>
 
-  <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
-    → Или загрузить фото QR-кода
-  </button>
+  <div class="info-box">
+    <h3>Прочитано</h3>
+    <div id="result">—</div>
+  </div>
 
-  <input type="file" id="fileInput" accept="image/*">
+  <div class="info-box">
+    <h3>Ответ от webhook</h3>
+    <div id="response">Ожидание отправки...</div>
+  </div>
 
-  <footer>Работает только по https • 2026</footer>
+  <button class="btn" onclick="location.reload()">Обновить страницу</button>
 
-  <script src="https://unpkg.com/html5-qrcode@latest/html5-qrcode.min.js"></script>
+  <footer>Работает на html5-qrcode • 2026</footer>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <script>
-    const status = document.getElementById("status");
-    const fileInput = document.getElementById("fileInput");
+    const WEBHOOK_URL = "https://unsuperciliously-feelingful-kandi.ngrok-free.dev/webhook/v1/scanner";
 
-    function setStatus(text, className = "") {
-      status.textContent = text;
-      status.className = "status-box " + className;
+    const statusEl   = document.getElementById("status");
+    const resultEl   = document.getElementById("result");
+    const responseEl = document.getElementById("response");
+
+    function setStatus(text, type = "") {
+      statusEl.textContent = text;
+      statusEl.className = type; // success / error
     }
 
-    const qrCode = new Html5Qrcode("reader", { verbose: false });
+    function setResult(text) {
+      resultEl.textContent = text || "—";
+    }
 
-    // ─── Самый важный момент — адаптивный размер окна сканирования ───
-    const getOptimalQrBox = (vw, vh) => {
-      const min = Math.min(vw, vh);
-      return Math.max(240, Math.min(460, Math.round(min * 0.75)));
-    };
+    function setResponse(content, isError = false) {
+      responseEl.textContent = content;
+      responseEl.style.color = isError ? 'var(--error)' : 'var(--text)';
+    }
 
-    setStatus("Запуск камеры...");
+    const qrCode = new Html5Qrcode("reader");
+
+    setStatus("Инициализация камеры...");
 
     qrCode.start(
       { facingMode: "environment" },
       {
         fps: 12,
-        qrbox: function (viewfinderWidth, viewfinderHeight) {
-          const size = getOptimalQrBox(viewfinderWidth, viewfinderHeight);
-          return { width: size, height: size };
-        },
-        aspectRatio: 1.0,
-        disableFlip: false
+        qrbox: { width: 320, height: 320 },
+        aspectRatio: 1.0
       },
-      (decodedText) => {
-        setStatus(`Прочитано: ${decodedText}`, "success");
-        // Здесь можешь отправить на webhook
-        console.log("QR:", decodedText);
+      async (decodedText) => {
+        setResult(decodedText);
+        setStatus("QR прочитан → отправка...", "success");
+        setResponse("Отправка данных...");
 
-        // Пауза 1.5 секунды
-        setTimeout(() => {
-          setStatus("Наведи следующий код...");
-        }, 1500);
+        try {
+          const payload = {
+            qr_code: decodedText,
+            timestamp: new Date().toISOString(),
+            user_agent: navigator.userAgent,
+            origin: window.location.origin
+          };
+
+          const response = await fetch(WEBHOOK_URL, {
+            method: "POST",
+            mode: "cors",
+            cache: "no-cache",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "qr-scanner-2026",
+              "Accept": "application/json, text/plain"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          // Читаем тело ответа ТОЛЬКО ОДИН раз
+          const bodyText = await response.text();
+
+          let responseBody;
+          try {
+            responseBody = JSON.parse(bodyText);
+          } catch {
+            responseBody = bodyText;
+          }
+
+          if (response.ok) {
+            setStatus("Успешно отправлено", "success");
+            setResponse(
+              typeof responseBody === 'object'
+                ? JSON.stringify(responseBody, null, 2)
+                : responseBody || "OK (без тела ответа)"
+            );
+          } else {
+            setStatus(`Ошибка ${response.status}`, "error");
+            setResponse(
+              `Сервер ответил ${response.status}\n${
+                typeof responseBody === 'object'
+                  ? JSON.stringify(responseBody, null, 2)
+                  : responseBody || "—"
+              }`,
+              true
+            );
+          }
+
+          // Задержка 1 секунда после получения ответа
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // Здесь можно добавить дополнительные действия после задержки
+          // Например: qrCode.stop();   ← если хочешь остановить сканирование
+          // или setStatus("Готов к следующему сканированию");
+
+        } catch (err) {
+          setStatus("Ошибка соединения", "error");
+          setResponse(`Не удалось выполнить запрос:\n${err.message}`, true);
+        }
       },
-      (err) => {
-        // Тихие ошибки — ничего не делаем
-      }
-    )
-    .catch(err => {
-      let msg = "Не удалось запустить камеру";
-
-      if (err.name === "NotAllowedError") {
-        msg = "Доступ к камере запрещён";
-      } else if (err.name === "NotReadableError") {
-        msg = "Камера занята или недоступна";
-      } else if (err.name === "OverconstrainedError") {
-        msg = "Не поддерживаемые параметры камеры";
-      }
-
-      msg += `\n\n${err.message || err}`;
-
-      setStatus(msg, "error");
-      console.error("Ошибка запуска камеры:", err);
+      () => {} // ошибки сканирования игнорируем
+    ).catch(err => {
+      setStatus("Не удалось запустить камеру", "error");
+      setResponse(`Ошибка: ${err.message}\n\nПроверьте разрешения камеры и HTTPS`, true);
     });
-
-
-    // ─── Загрузка фото из галереи ───
-    fileInput.onchange = async function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      setStatus("Читаю фото...");
-
-      try {
-        const result = await qrCode.scanFile(file, true);
-        setStatus(`Прочитано из фото:\n${result}`, "success");
-
-        // Здесь можно отправить на webhook
-        console.log("QR из фото:", result);
-
-        setTimeout(() => {
-          setStatus("Готово. Можешь загрузить следующее фото");
-        }, 2000);
-      } catch (err) {
-        setStatus("Не получилось прочитать фото\n" + err.message, "error");
-        console.error(err);
-      }
-
-      fileInput.value = ''; // сбрасываем, чтобы можно было загрузить то же самое снова
-    };
   </script>
 </body>
 </html>
