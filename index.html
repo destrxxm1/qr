@@ -9,13 +9,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a0a14;
-      --surface: #12121e;
-      --accent: #6366f1;
+      --bg: #0b0e1a;
+      --surface: #111827;
+      --accent: #6366f1;        /* основной акцент — индиго */
       --accent-dark: #4f46e5;
-      --success: #10b981;
-      --error: #ef4444;
-      --text: #f1f5f9;
+      --success: #34d399;       /* свежий зелёный */
+      --warning: #fbbf24;
+      --error: #f87171;         /* мягкий красный */
+      --text: #e2e8f0;
       --text-secondary: #94a3b8;
     }
 
@@ -32,123 +33,184 @@
       padding: 16px;
     }
 
-    header { text-align:center; margin:16px 0 24px; }
-    h1 { font-size:2.25rem; font-weight:700; letter-spacing:-0.025em; }
-    .event-name { font-size:1.1rem; color:var(--text-secondary); margin-top:4px; }
+    header {
+      text-align: center;
+      margin: 20px 0 28px;
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: white;
+    }
+
+    .event-name {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
 
     #reader-container {
-      width:100%; max-width:420px; aspect-ratio:1/1;
-      margin:0 auto 24px; border-radius:20px; overflow:hidden;
-      box-shadow:0 20px 40px rgba(0,0,0,0.7);
-      border:3px solid var(--accent); background:#000;
+      width: 100%;
+      max-width: 440px;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto 28px;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+      border: 3px solid var(--accent);
+      background: #000;
     }
 
-    #reader { width:100%; height:100%; }
+    #reader { width: 100%; height: 100%; }
 
     .status-card {
-      width:100%; max-width:460px;
-      background:var(--surface); border-radius:16px;
-      padding:20px; margin-bottom:20px;
-      border:1px solid #1e293b; box-shadow:0 8px 24px rgba(0,0,0,0.4);
+      width: 100%;
+      max-width: 460px;
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      border: 1px solid #1e293b;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
-    .status-card h3 { color:var(--accent); margin-bottom:12px; font-size:1.25rem; }
+    .status-card h3 {
+      color: var(--accent);
+      margin-bottom: 12px;
+      font-size: 1.3rem;
+    }
 
-    #status { font-size:1.25rem; font-weight:600; min-height:1.6em; line-height:1.4; }
+    #status {
+      font-size: 1.3rem;
+      font-weight: 600;
+      min-height: 1.6em;
+      line-height: 1.4;
+    }
 
-    .success { color:var(--success); }
-    .error   { color:var(--error); }
+    .success { color: var(--success); }
+    .error   { color: var(--error); }
+    .warning { color: var(--warning); }
 
     #result {
-      margin-top:12px; padding:12px;
-      background:#0f172a; border-radius:10px;
-      font-family:monospace; font-size:1.1rem;
-      word-break:break-all;
+      margin-top: 12px;
+      padding: 14px;
+      background: #0f172a;
+      border-radius: 12px;
+      font-family: monospace;
+      font-size: 1.15rem;
+      word-break: break-all;
     }
 
     /* Оверлей "ОТСКАНИРОВАНО" */
     #scan-overlay {
-      position:fixed; inset:0;
-      background:rgba(0,0,0,0.92);
-      display:none; flex-direction:column;
-      align-items:center; justify-content:center;
-      z-index:1000;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 15, 26, 0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
     }
 
-    #scan-overlay.show { display:flex; }
+    #scan-overlay.show { display: flex; }
 
     .scan-text {
-      font-size:4.2rem;
-      font-weight:900;
-      color:var(--success);
-      margin-bottom:16px;
-      text-shadow:0 0 40px var(--success);
-      letter-spacing:0.05em;
+      font-size: 4.8rem;
+      font-weight: 900;
+      color: var(--success);
+      margin-bottom: 20px;
+      text-shadow: 0 0 40px rgba(52, 211, 153, 0.7);
+      letter-spacing: 0.04em;
     }
 
     .scan-details {
-      font-size:1.5rem;
-      color:#e2e8f0;
-      text-align:center;
-      max-width:85%;
-      line-height:1.4;
+      font-size: 1.7rem;
+      color: #e2e8f0;
+      text-align: center;
+      max-width: 90%;
+      line-height: 1.4;
     }
 
-    .scan-time { font-size:1.1rem; color:var(--text-secondary); margin-top:12px; }
+    .scan-time {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-top: 16px;
+    }
 
     .btn {
-      background:var(--accent); color:white; border:none;
-      padding:14px 32px; font-size:1.1rem; font-weight:600;
-      border-radius:12px; cursor:pointer;
-      margin:12px 8px 0; transition:all 0.18s;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 14px 36px;
+      font-size: 1.15rem;
+      font-weight: 600;
+      border-radius: 14px;
+      cursor: pointer;
+      margin: 16px 8px 0;
+      transition: all 0.2s;
     }
 
-    .btn:hover { background:var(--accent-dark); transform:translateY(-2px); }
+    .btn:hover { background: var(--accent-dark); transform: translateY(-2px); }
 
-    .secondary-btn { background:#334155; margin-top:20px; }
-    .secondary-btn:hover { background:#475569; }
+    .secondary-btn {
+      background: #334155;
+      margin-top: 24px;
+    }
+
+    .secondary-btn:hover { background: #475569; }
 
     /* Архив */
     #archive {
-      width:100%; max-width:460px;
-      margin-top:32px;
-      background:var(--surface);
-      border-radius:16px;
-      padding:16px;
-      border:1px solid #1e293b;
+      width: 100%;
+      max-width: 460px;
+      margin-top: 40px;
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid #1e293b;
     }
 
-    #archive h3 { color:var(--accent); font-size:1.2rem; margin-bottom:12px; }
+    #archive h3 {
+      color: var(--accent);
+      font-size: 1.25rem;
+      margin-bottom: 14px;
+    }
 
     .archive-list {
-      max-height:300px;
-      overflow-y:auto;
-      font-size:0.95rem;
-      line-height:1.6;
+      max-height: 320px;
+      overflow-y: auto;
+      font-size: 0.95rem;
+      line-height: 1.6;
     }
 
     .archive-item {
-      padding:8px 0;
-      border-bottom:1px solid #2d3748;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:8px;
+      padding: 10px 0;
+      border-bottom: 1px solid #2d3748;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
     }
 
-    .archive-time { color:var(--text-secondary); font-size:0.85rem; white-space:nowrap; }
-    .archive-code { font-family:monospace; flex:1; word-break:break-all; }
-    .archive-status { font-weight:600; min-width:100px; text-align:right; }
+    .archive-time { color: var(--text-secondary); font-size: 0.85rem; white-space: nowrap; }
+    .archive-code { font-family: monospace; flex: 1; word-break: break-all; }
+    .archive-status { font-weight: 600; min-width: 100px; text-align: right; }
 
     footer {
-      margin-top:auto; padding:32px 0 16px;
-      color:#475569; font-size:0.9rem; text-align:center;
+      margin-top: auto;
+      padding: 40px 0 20px;
+      color: #475569;
+      font-size: 0.9rem;
+      text-align: center;
     }
 
-    @media (max-width:480px) {
-      h1 { font-size:1.9rem; }
-      .scan-text { font-size:3.2rem; }
-      .scan-details { font-size:1.3rem; }
+    @media (max-width: 480px) {
+      h1 { font-size: 2rem; }
+      .scan-text { font-size: 3.6rem; }
+      .scan-details { font-size: 1.4rem; }
     }
   </style>
 </head>
@@ -194,9 +256,7 @@
 
   <script>
     const WEBHOOK_URL = "https://unsuperciliously-feelingful-kandi.ngrok-free.dev/webhook/v1/scanner";
-    const COOLDOWN_MS = 4000;
-    const MAX_ARCHIVE = 20;
-    const MAX_RECENT_CODES = 5; // сколько последних кодов помнить, чтобы не дублировать
+    const COOLDOWN_MS = 3000; // 3 секунды кулдауна после сканирования
 
     const statusEl     = document.getElementById("status");
     const resultEl     = document.getElementById("result");
@@ -208,16 +268,15 @@
 
     let isCooldown = false;
     let archive = JSON.parse(localStorage.getItem("ticketArchive") || "[]");
-    let recentCodes = new Set(); // последние уникальные коды для анти-дубликатов
 
     function saveArchive() {
-      localStorage.setItem("ticketArchive", JSON.stringify(archive.slice(-MAX_ARCHIVE)));
+      localStorage.setItem("ticketArchive", JSON.stringify(archive.slice(-20)));
       renderArchive();
     }
 
     function renderArchive() {
       archiveList.innerHTML = "";
-      archive.slice(-MAX_ARCHIVE).reverse().forEach(item => {
+      archive.slice(-20).reverse().forEach(item => {
         const div = document.createElement("div");
         div.className = "archive-item";
         div.innerHTML = `
@@ -253,19 +312,6 @@
       saveArchive();
     }
 
-    function isDuplicate(code) {
-      return recentCodes.has(code);
-    }
-
-    function addToRecent(code) {
-      recentCodes.add(code);
-      if (recentCodes.size > MAX_RECENT_CODES) {
-        // удаляем самый старый (Set не сохраняет порядок, но для 5 элементов не критично)
-        const oldest = [...recentCodes][0];
-        recentCodes.delete(oldest);
-      }
-    }
-
     function showScanSuccess(category = "") {
       const now = new Date().toLocaleString('ru-RU', {
         day: '2-digit', month: '2-digit', year: 'numeric',
@@ -284,20 +330,14 @@
       }, COOLDOWN_MS);
     }
 
-    function showError(message = "Ошибка проверки билета") {
-      setStatus(message.toUpperCase(), "error");
-      setResult(message, "error");
-      new Audio("https://assets.mixkit.co/sfx/preview/mixkit-negative-answer-low-tone-2033.mp3").play().catch(()=>{});
-      navigator.vibrate?.([100, 50, 100]);
-    }
-
     function startCooldown() {
       if (isCooldown) return;
       isCooldown = true;
+      setStatus("Ожидание…", "success");
+      setResult("—");
       setTimeout(() => {
         isCooldown = false;
         setStatus("Готов сканировать следующий билет", "success");
-        setResult("—");
       }, COOLDOWN_MS);
     }
 
@@ -315,14 +355,6 @@
         if (isCooldown) return;
 
         const code = decodedText.trim();
-
-        // Проверка на дубликат
-        if (isDuplicate(code)) {
-          setStatus("Этот билет уже отсканирован недавно", "warning");
-          setResult(code, "warning");
-          return; // не отправляем запрос, не добавляем в архив
-        }
-
         setResult(code, "success");
         setStatus("Проверка билета...", "success");
 
@@ -348,35 +380,29 @@
 
           const text = await res.text();
           let data = {};
-          try {
-            data = JSON.parse(text);
-          } catch {
-            data = { message: text.trim() };
-          }
+          try { data = JSON.parse(text); } catch { data = { message: text.trim() }; }
 
           let message = data.message || data.errorMessage || data.error || text.trim() || "Неизвестный ответ";
           let category = data.category || "";
 
-          // Обработка конкретных ответов
           if (message.toLowerCase().includes("succesful") || message.toLowerCase().includes("successful")) {
             showScanSuccess(category);
             addToArchive(code, "success", category ? `Принят (${category})` : "Принят");
             setResult(category ? `Принят (${category})` : "Билет принят", "success");
-            addToRecent(code); // добавляем в анти-дубликаты только при успехе
           } else {
             let errMsg = message;
             if (message.includes("not exits")) errMsg = "БИЛЕТА НЕ СУЩЕСТВУЕТ!";
             if (message.includes("not correct day")) errMsg = "НЕВЕРНЫЙ ДЕНЬ!";
             if (message.includes("already scanned")) errMsg = "БИЛЕТ УЖЕ ОТМЕЧЕН!";
 
-            showError(errMsg);
-            addToArchive(code, "error", errMsg);
+            setStatus(errMsg.toUpperCase(), "error");
             setResult(errMsg, "error");
+            addToArchive(code, "error", errMsg);
           }
         } catch (err) {
-          showError("Нет связи с сервером");
-          addToArchive(code, "error", "Нет связи");
+          setStatus("Нет связи с сервером", "error");
           setResult("Проверьте интернет", "error");
+          addToArchive(code, "error", "Нет связи");
         }
 
         startCooldown();
@@ -402,10 +428,9 @@
         // Имитация запроса (можно заменить на реальный fetch)
         showScanSuccess();
         addToArchive(code, "success", "Принят из фото");
-        addToRecent(code);
         startCooldown();
       } catch (err) {
-        showError("Фото не распознано");
+        setStatus("Фото не распознано", "error");
         setResult("Попробуйте другое фото", "error");
       }
 
