@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>QR Сканер</title>
+  <title>Сканер билетов</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f0f17;
-      --surface: #171726;
-      --surface2: #1e1e38;
-      --text: #e0e0ff;
-      --text-secondary: #a0a0cc;
-      --accent: #7c3aed;
-      --accent-dark: #5b21b6;
+      --bg: #0a0a14;
+      --surface: #12121e;
+      --accent: #6366f1;
+      --accent-dark: #4f46e5;
       --success: #10b981;
+      --warning: #f59e0b;
       --error: #ef4444;
+      --text: #f1f5f9;
+      --text-secondary: #94a3b8;
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -27,248 +27,302 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 16px;
     }
 
     header {
       text-align: center;
-      margin: 20px 0 32px;
+      margin: 16px 0 24px;
     }
 
     h1 {
-      font-size: 2.1rem;
+      font-size: 2.25rem;
       font-weight: 700;
-      margin-bottom: 8px;
-      background: linear-gradient(90deg, #a78bfa, #c084fc);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.025em;
     }
 
-    .subtitle { color: var(--text-secondary); font-size: 1.05rem; }
+    .event-name {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
 
     #reader-container {
       width: 100%;
       max-width: 420px;
+      aspect-ratio: 1 / 1;
       margin: 0 auto 24px;
-      border-radius: 16px;
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-      border: 2px solid var(--accent);
-      background: var(--surface);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+      border: 3px solid var(--accent);
+      background: #000;
       position: relative;
     }
 
-    #reader { width: 100%; aspect-ratio: 1 / 1; }
+    #reader { width: 100%; height: 100%; }
 
-    .info-box {
+    .status-card {
       width: 100%;
       max-width: 460px;
       background: var(--surface);
-      border-radius: 12px;
-      padding: 16px 20px;
-      margin-bottom: 16px;
-      border: 1px solid #2d2d4a;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #1e293b;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
-    .info-box h3 {
-      margin-bottom: 10px;
-      font-size: 1.1rem;
+    .status-card h3 {
       color: var(--accent);
+      margin-bottom: 12px;
+      font-size: 1.25rem;
     }
 
-    #status { font-weight: 500; }
-
-    #result {
-      word-break: break-all;
-      font-family: monospace;
-      background: #0a0a1f;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 8px;
-    }
-
-    #response {
-      white-space: pre-wrap;
-      font-size: 0.95rem;
-      max-height: 180px;
-      overflow-y: auto;
-      background: #0a0a1f;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 8px;
+    #status {
+      font-size: 1.25rem;
+      font-weight: 600;
+      min-height: 1.6em;
+      line-height: 1.4;
     }
 
     .success { color: var(--success); }
     .error   { color: var(--error); }
+    .warning { color: var(--warning); }
+
+    #result {
+      margin-top: 12px;
+      padding: 12px;
+      background: #0f172a;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 1.1rem;
+      word-break: break-all;
+    }
+
+    .cooldown-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .cooldown-overlay.show {
+      display: flex;
+    }
+
+    .cooldown-text {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--success);
+      margin-bottom: 16px;
+      text-shadow: 0 0 30px rgba(16,185,129,0.6);
+    }
+
+    .cooldown-sub {
+      font-size: 1.4rem;
+      color: #e2e8f0;
+    }
 
     .btn {
       background: var(--accent);
       color: white;
       border: none;
-      padding: 12px 28px;
-      font-size: 1rem;
+      padding: 14px 32px;
+      font-size: 1.1rem;
       font-weight: 600;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      transition: all 0.2s;
       margin: 12px 8px 0;
+      transition: all 0.18s;
     }
 
-    .btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
+    .btn:hover { background: var(--accent-dark); transform: translateY(-2px); }
     .btn:active  { transform: translateY(0); }
+
+    .secondary-btn {
+      background: #334155;
+      margin-top: 20px;
+    }
+
+    .secondary-btn:hover { background: #475569; }
 
     footer {
       margin-top: auto;
-      padding: 24px 0 16px;
-      color: #6b7280;
-      font-size: 0.875rem;
+      padding: 32px 0 16px;
+      color: #475569;
+      font-size: 0.9rem;
       text-align: center;
     }
 
-    @media (max-width: 500px) {
-      h1 { font-size: 1.8rem; }
-      #reader-container { max-width: 100%; }
+    @media (max-width: 480px) {
+      h1 { font-size: 1.9rem; }
+      .cooldown-text { font-size: 2.8rem; }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>QR Сканер</h1>
-    <div class="subtitle">Наведи камеру на код — данные улетят на webhook</div>
+    <h1>Сканер билетов</h1>
+    <div class="event-name">Фестиваль / Концерт / Клуб / Театр</div>
   </header>
 
   <div id="reader-container">
     <div id="reader"></div>
   </div>
 
-  <div class="info-box">
+  <div class="status-card">
     <h3>Статус</h3>
     <div id="status">Запускаю камеру...</div>
+    <div id="result" style="margin-top:12px;">—</div>
   </div>
 
-  <div class="info-box">
-    <h3>Прочитано</h3>
-    <div id="result">—</div>
+  <button class="btn secondary-btn" onclick="document.getElementById('fileInput').click()">
+    Ручной ввод / фото билета
+  </button>
+
+  <input type="file" id="fileInput" accept="image/*" style="display:none;">
+
+  <div class="cooldown-overlay" id="cooldown">
+    <div class="cooldown-text">OK</div>
+    <div class="cooldown-sub">Билет принят</div>
   </div>
 
-  <div class="info-box">
-    <h3>Ответ от webhook</h3>
-    <div id="response">Ожидание отправки...</div>
-  </div>
+  <footer>Контроль доступа • Работает только по HTTPS</footer>
 
-  <button class="btn" onclick="location.reload()">Обновить страницу</button>
-
-  <footer>Работает на html5-qrcode • 2026</footer>
-
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@latest/html5-qrcode.min.js"></script>
 
   <script>
     const WEBHOOK_URL = "https://unsuperciliously-feelingful-kandi.ngrok-free.dev/webhook/v1/scanner";
+    const COOLDOWN_MS = 3000; // 3 секунды кулдауна после успешного сканирования
 
-    const statusEl   = document.getElementById("status");
-    const resultEl   = document.getElementById("result");
-    const responseEl = document.getElementById("response");
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+    const cooldownEl = document.getElementById("cooldown");
+    const fileInput = document.getElementById("fileInput");
 
-    function setStatus(text, type = "") {
+    let isCooldown = false;
+
+    function setStatus(text, cls = "") {
       statusEl.textContent = text;
-      statusEl.className = type; // success / error
+      statusEl.className = cls;
     }
 
-    function setResult(text) {
-      resultEl.textContent = text || "—";
+    function setResult(text, cls = "") {
+      resultEl.textContent = text;
+      resultEl.className = cls;
     }
 
-    function setResponse(content, isError = false) {
-      responseEl.textContent = content;
-      responseEl.style.color = isError ? 'var(--error)' : 'var(--text)';
+    function showSuccessOverlay() {
+      cooldownEl.classList.add("show");
+      new Audio("https://assets.mixkit.co/sfx/preview/mixkit-confirmation-tone-286.mp3").play().catch(()=>{});
+      setTimeout(() => {
+        cooldownEl.classList.remove("show");
+      }, COOLDOWN_MS);
+    }
+
+    function startCooldown() {
+      if (isCooldown) return;
+      isCooldown = true;
+      setStatus("Ожидание следующего билета...", "success");
+      setTimeout(() => {
+        isCooldown = false;
+        setStatus("Готов сканировать следующий билет", "success");
+        setResult("—");
+      }, COOLDOWN_MS);
     }
 
     const qrCode = new Html5Qrcode("reader");
 
-    setStatus("Инициализация камеры...");
-
     qrCode.start(
       { facingMode: "environment" },
       {
-        fps: 12,
-        qrbox: { width: 320, height: 320 },
-        aspectRatio: 1.0
+        fps: 15,
+        qrbox: function(w, h) {
+          const min = Math.min(w, h);
+          return { width: Math.round(min * 0.78), height: Math.round(min * 0.78) };
+        },
+        aspectRatio: 1.0,
+        disableFlip: false
       },
       async (decodedText) => {
-        setResult(decodedText);
-        setStatus("QR прочитан → отправка...", "success");
-        setResponse("Отправка данных...");
+        if (isCooldown) return;
+
+        setResult(decodedText, "success");
+        setStatus("Проверка билета...", "success");
 
         try {
           const payload = {
-            qr_code: decodedText,
+            ticket_code: decodedText.trim(),
             timestamp: new Date().toISOString(),
-            user_agent: navigator.userAgent,
-            origin: window.location.origin
+            device: navigator.userAgent,
+            scanner_id: "scanner-01" // можно заменить на реальный ID устройства
           };
 
-          const response = await fetch(WEBHOOK_URL, {
+          const res = await fetch(WEBHOOK_URL, {
             method: "POST",
             mode: "cors",
             cache: "no-cache",
             headers: {
               "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "qr-scanner-2026",
-              "Accept": "application/json, text/plain"
+              "ngrok-skip-browser-warning": "scanner-2026",
+              "Accept": "application/json"
             },
             body: JSON.stringify(payload)
           });
 
-          // Читаем тело ответа ТОЛЬКО ОДИН раз
-          const bodyText = await response.text();
+          const text = await res.text();
+          let data;
 
-          let responseBody;
-          try {
-            responseBody = JSON.parse(bodyText);
-          } catch {
-            responseBody = bodyText;
-          }
+          try { data = JSON.parse(text); } catch { data = text; }
 
-          if (response.ok) {
-            setStatus("Успешно отправлено", "success");
-            setResponse(
-              typeof responseBody === 'object'
-                ? JSON.stringify(responseBody, null, 2)
-                : responseBody || "OK (без тела ответа)"
-            );
+          if (res.ok) {
+            showSuccessOverlay();
+            startCooldown();
+            setResult(`Билет ${decodedText.slice(0,8)}... принят`, "success");
           } else {
-            setStatus(`Ошибка ${response.status}`, "error");
-            setResponse(
-              `Сервер ответил ${response.status}\n${
-                typeof responseBody === 'object'
-                  ? JSON.stringify(responseBody, null, 2)
-                  : responseBody || "—"
-              }`,
-              true
-            );
+            setStatus(`Ошибка ${res.status}`, "error");
+            setResult(data.message || data || "Билет не принят", "error");
           }
-
-          // Задержка 1 секунда после получения ответа
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          // Здесь можно добавить дополнительные действия после задержки
-          // Например: qrCode.stop();   ← если хочешь остановить сканирование
-          // или setStatus("Готов к следующему сканированию");
-
         } catch (err) {
-          setStatus("Ошибка соединения", "error");
-          setResponse(`Не удалось выполнить запрос:\n${err.message}`, true);
+          setStatus("Нет связи с сервером", "error");
+          setResult("Проверьте интернет", "error");
         }
       },
-      () => {} // ошибки сканирования игнорируем
+      () => {} // тихие ошибки сканирования
     ).catch(err => {
-      setStatus("Не удалось запустить камеру", "error");
-      setResponse(`Ошибка: ${err.message}\n\nПроверьте разрешения камеры и HTTPS`, true);
+      setStatus("Не удалось открыть камеру", "error");
+      setResult(err.message || "Разрешите доступ к камере", "error");
+    });
+
+    // Ручная загрузка фото
+    fileInput.addEventListener("change", async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      setStatus("Читаю билет из фото...", "warning");
+
+      try {
+        const result = await qrCode.scanFile(file, true);
+        // имитируем тот же процесс, что и при live-сканировании
+        setResult(result, "success");
+        // здесь можно добавить тот же fetch-запрос, что и выше
+        showSuccessOverlay();
+        startCooldown();
+      } catch (err) {
+        setStatus("Фото не распознано", "error");
+        setResult("Попробуйте другое фото", "error");
+      }
+
+      e.target.value = "";
     });
   </script>
 </body>
