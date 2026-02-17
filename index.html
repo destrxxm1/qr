@@ -193,7 +193,7 @@
 
   <script>
     const WEBHOOK_URL = "https://unsuperciliously-feelingful-kandi.ngrok-free.dev/webhook/v1/scanner";
-    const COOLDOWN_MS = 3000;
+    const COOLDOWN_MS = 3000; // 3 секунды кулдауна после сканирования
 
     const statusEl     = document.getElementById("status");
     const resultEl     = document.getElementById("result");
@@ -205,7 +205,7 @@
 
     let isCooldown = false;
     let archive = JSON.parse(localStorage.getItem("ticketArchive") || "[]");
-    let scannedCodes = new Set(JSON.parse(localStorage.getItem("scannedCodes") || "[]")); // все отсканированные коды навсегда
+    let scannedCodes = new Set(JSON.parse(localStorage.getItem("scannedCodes") || "[]"));
 
     function saveData() {
       localStorage.setItem("ticketArchive", JSON.stringify(archive.slice(-20)));
@@ -251,11 +251,11 @@
       saveData();
     }
 
-    function isAlreadyScanned(code) {
+    function isDuplicate(code) {
       return scannedCodes.has(code);
     }
 
-    function markAsScanned(code) {
+    function markScanned(code) {
       scannedCodes.add(code);
       saveData();
     }
@@ -276,6 +276,11 @@
       setTimeout(() => scanOverlay.classList.remove("show"), 3000);
     }
 
+    function showDuplicateWarning(code) {
+      setStatus("Этот билет уже отсканирован ранее", "warning");
+      setResult(code, "warning");
+    }
+
     function showError(message = "Ошибка проверки билета") {
       setStatus(message.toUpperCase(), "error");
       setResult(message, "error");
@@ -291,7 +296,7 @@
       setTimeout(() => {
         isCooldown = false;
         setStatus("Готов сканировать следующий билет", "success");
-      }, 3000);
+      }, COOLDOWN_MS);
     }
 
     const qrCode = new Html5Qrcode("reader");
@@ -309,9 +314,8 @@
 
         const code = decodedText.trim();
 
-        if (isAlreadyScanned(code)) {
-          setStatus("Этот билет уже отсканирован ранее", "warning");
-          setResult(code, "warning");
+        if (isDuplicate(code)) {
+          showDuplicateWarning(code);
           return;
         }
 
@@ -349,7 +353,7 @@
             showScanSuccess(category);
             addToArchive(code, "success", category ? `Принят (${category})` : "Принят");
             setResult(category ? `Принят (${category})` : "Билет принят", "success");
-            markAsScanned(code); // запоминаем как отсканированный
+            markScanned(code); // запоминаем как успешно отсканированный
           } else {
             let errMsg = message;
             if (message.includes("not exits")) errMsg = "БИЛЕТА НЕ СУЩЕСТВУЕТ!";
@@ -385,9 +389,8 @@
         const result = await qrCode.scanFile(file, true);
         const code = result.trim();
 
-        if (isAlreadyScanned(code)) {
-          setStatus("Этот билет уже отсканирован ранее", "warning");
-          setResult(code, "warning");
+        if (isDuplicate(code)) {
+          showDuplicateWarning(code);
           return;
         }
 
@@ -395,7 +398,7 @@
 
         showScanSuccess();
         addToArchive(code, "success", "Принят из фото");
-        markAsScanned(code);
+        markScanned(code);
         startCooldown();
       } catch (err) {
         showError("Фото не распознано");
