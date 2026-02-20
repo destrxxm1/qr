@@ -12,7 +12,6 @@
       --bg: #0b0e1a;
       --success: #34d399;
       --error: #f87171;
-      --warning: #fbbf24;
       --text: #e2e8f0;
     }
 
@@ -57,6 +56,7 @@
       box-shadow: 0 30px 70px rgba(0,0,0,0.8);
       border: 4px solid #6366f1;
       background: #000;
+      transition: opacity 0.4s;
     }
 
     #reader { width: 100%; height: 100%; }
@@ -93,7 +93,6 @@
 
     .success .banner-title { color: var(--success); }
     .error   .banner-title { color: var(--error); }
-    .warning .banner-title { color: var(--warning); }
 
     @media (max-width: 500px) {
       h1 { font-size: 2.2rem; }
@@ -123,14 +122,100 @@
 
   <script>
     const WEBHOOK_URL = "https://unsuperciliously-feelingful-kandi.ngrok-free.dev/webhook/v1/scanner";
-    const BANNER_MS = 1500; // 1,5 секунды
-    const COOLDOWN_MS = 3000; // 3 секунды кулдауна
+    const BANNER_MS = 1500;     // баннер 1,5 секунды
+    const COOLDOWN_AFTER_BANNER = 500; // небольшая задержка после баннера перед перезапуском камеры
 
     const banner = document.getElementById("banner");
     const bannerTitle = document.getElementById("banner-title");
     const bannerCategory = document.getElementById("banner-category");
+    const readerContainer = document.getElementById("reader-container");
 
-    let isCooldown = false;
+    let qrCode = null;
+    let isProcessing = false;
+
+    async function startCamera() {
+      if (qrCode) {
+        await qrCode.stop().catch(() => {});
+      }
+
+      qrCode = new Html5Qrcode("reader");
+
+      try {
+        await qrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 15,
+            qrbox: function(w, h) {
+              const min = Math.min(w, h);
+              return { width: Math.round(min * 0.78), height: Math.round(min * 0.78) };
+            },
+            aspectRatio: 1.0,
+            disableFlip: false
+          },
+          async (decodedText) => {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            // Останавливаем камеру сразу после чтения QR
+            await qrCode.stop().catch(() => {});
+            readerContainer.style.opacity = "0.3"; // визуально затемняем
+
+            const code = decodedText.trim();
+
+            try {
+              const payload = {
+                ticket_code: code,
+                timestamp: new Date().toISOString(),
+                device: navigator.userAgent
+              };
+
+              const res = await fetch(WEBHOOK_URL, {
+                method: "POST",
+                mode: "cors",
+                cache: "no-cache",
+                headers: {
+                  "Content-Type": "application/json",
+                  "ngrok-skip-browser-warning": "scanner-2026",
+                  "Accept": "application/json"
+                },
+                body: JSON.stringify(payload)
+              });
+
+              const text = await res.text();
+              let data = {};
+              try { data = JSON.parse(text); } catch { data = { message: text.trim() }; }
+
+              let message = (data.message || data.errorMessage || data.error || text.trim() || "").toLowerCase();
+              let category = data.category || "";
+
+              if (message.includes("succesful") || message.includes("successful")) {
+                showBanner("УСПЕШНО ОТСКАНИРОВАНО", category, "success");
+              } else {
+                let errMsg = message.toUpperCase();
+                if (message.includes("not exits")) errMsg = "БИЛЕТА НЕ СУЩЕСТВУЕТ!";
+                if (message.includes("not correct day")) errMsg = "НЕВЕРНЫЙ ДЕНЬ!";
+                if (message.includes("already scanned")) errMsg = "БИЛЕТ УЖЕ ОТМЕЧЕН!";
+
+                showBanner("ОШИБКА!", errMsg, "error");
+              }
+            } catch (err) {
+              showBanner("ОШИБКА!", "НЕТ СВЯЗИ С СЕРВЕРОМ", "error");
+            }
+
+            // После баннера перезапускаем камеру
+            setTimeout(async () => {
+              readerContainer.style.opacity = "1";
+              await startCamera();
+              isProcessing = false;
+            }, BANNER_MS + COOLDOWN_AFTER_BANNER);
+          },
+          () => {}
+        );
+      } catch (err) {
+        showBanner("ОШИБКА КАМЕРЫ", err.message.toUpperCase(), "error");
+        isProcessing = false;
+      }
+    }
 
     function showBanner(title, category = "", type = "success") {
       bannerTitle.textContent = title;
@@ -143,82 +228,11 @@
 
       setTimeout(() => {
         banner.classList.remove("show");
-      }, BANNER_MS);
+      }, 1500);
     }
 
-    function startCooldown() {
-      if (isCooldown) return;
-      isCooldown = true;
-      setTimeout(() => {
-        isCooldown = false;
-      }, COOLDOWN_MS);
-    }
-
-    const qrCode = new Html5Qrcode("reader");
-
-    qrCode.start(
-      { facingMode: "environment" },
-      {
-        fps: 15,
-        qrbox: function(w, h) {
-          const min = Math.min(w, h);
-          return { width: Math.round(min * 0.78), height: Math.round(min * 0.78) };
-        },
-        aspectRatio: 1.0,
-        disableFlip: false
-      },
-      async (decodedText) => {
-        if (isCooldown) return;
-
-        const code = decodedText.trim();
-
-        try {
-          const payload = {
-            ticket_code: code,
-            timestamp: new Date().toISOString(),
-            device: navigator.userAgent
-          };
-
-          const res = await fetch(WEBHOOK_URL, {
-            method: "POST",
-            mode: "cors",
-            cache: "no-cache",
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "scanner-2026",
-              "Accept": "application/json"
-            },
-            body: JSON.stringify(payload)
-          });
-
-          const text = await res.text();
-          let data = {};
-          try { data = JSON.parse(text); } catch { data = { message: text.trim() }; }
-
-          let message = (data.message || data.errorMessage || data.error || text.trim() || "").toLowerCase();
-          let category = data.category || "";
-
-          if (message.includes("succesful") || message.includes("successful")) {
-            showBanner("УСПЕШНО ОТСКАНИРОВАНО", category, "success");
-          } else {
-            let errMsg = message.toUpperCase();
-            if (message.includes("not exits")) errMsg = "БИЛЕТА НЕ СУЩЕСТВУЕТ!";
-            if (message.includes("not correct day")) errMsg = "НЕВЕРНЫЙ ДЕНЬ!";
-            if (message.includes("already scanned")) errMsg = "БИЛЕТ УЖЕ ОТМЕЧЕН!";
-
-            showBanner("ОШИБКА!", errMsg, "error");
-          }
-        } catch (err) {
-          showBanner("ОШИБКА!", "НЕТ СВЯЗИ С СЕРВЕРОМ", "error");
-        }
-
-        startCooldown();
-      },
-      () => {}
-    ).catch(err => {
-      const msg = err.name === "NotAllowedError" ? "РАЗРЕШИТЕ КАМЕРУ" : err.message;
-      showBanner("ОШИБКА КАМЕРЫ", msg.toUpperCase(), "error");
-    });
+    // Запуск при загрузке страницы
+    startCamera();
   </script>
 </body>
 </html>
